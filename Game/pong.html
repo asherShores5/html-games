@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Pong Game</title>
+  <style>
+    #game-board {
+      width: 600px;
+      height: 400px;
+      background-color: #000;
+      position: relative;
+    }
+
+    .paddle {
+      width: 10px;
+      height: 60px;
+      background-color: #fff;
+      position: absolute;
+    }
+
+    .ball {
+      width: 10px;
+      height: 10px;
+      background-color: #fff;
+      position: absolute;
+    }
+  </style>
+</head>
+<body>
+  <h1>Pong Game</h1>
+  <div id="game-board"></div>
+  <script>
+    // Game constants
+    const BOARD_WIDTH = 600;
+    const BOARD_HEIGHT = 400;
+    const PADDLE_WIDTH = 10;
+    const PADDLE_HEIGHT = 60;
+    const BALL_SIZE = 10;
+    const PADDLE_SPEED = 5;
+    const BALL_SPEED = 3;
+
+    // Game variables
+    let paddle1Y = BOARD_HEIGHT / 2 - PADDLE_HEIGHT / 2;
+    let paddle2Y = BOARD_HEIGHT / 2 - PADDLE_HEIGHT / 2;
+    let ballX = BOARD_WIDTH / 2 - BALL_SIZE / 2;
+    let ballY = BOARD_HEIGHT / 2 - BALL_SIZE / 2;
+    let ballSpeedX = BALL_SPEED;
+    let ballSpeedY = BALL_SPEED;
+
+    // Game board element
+    const gameBoard = document.getElementById('game-board');
+
+    // Create the paddles
+    const paddle1 = document.createElement('div');
+    paddle1.style.left = '0';
+    paddle1.style.top = paddle1Y + 'px';
+    paddle1.classList.add('paddle');
+    gameBoard.appendChild(paddle1);
+
+    const paddle2 = document.createElement('div');
+    paddle2.style.left = BOARD_WIDTH - PADDLE_WIDTH + 'px';
+    paddle2.style.top = paddle2Y + 'px';
+    paddle2.classList.add('paddle');
+    gameBoard.appendChild(paddle2);
+
+    // Create the ball
+    const ball = document.createElement('div');
+    ball.style.left = ballX + 'px';
+    ball.style.top = ballY + 'px';
+    ball.classList.add('ball');
+    gameBoard.appendChild(ball);
+
+    // Update the game state
+    function update() {
+      // Move the paddles
+      movePaddles();
+
+      // Move the ball
+      moveBall();
+
+      // Render the game
+      render();
+
+      // Check for collision with paddles
+      checkPaddleCollision();
+
+      // Check for collision with walls
+      checkWallCollision();
+
+      // Check for goal scored
+      checkGoal();
+    }
+
+    // Move the paddles based on user input
+    function movePaddles() {
+      document.addEventListener('keydown', function(event) {
+        switch (event.key) {
+          case 'i':
+            paddle2Y -= PADDLE_SPEED;
+            break;
+          case 'k':
+            paddle2Y += PADDLE_SPEED;
+            break;
+          case 'w':
+            paddle1Y -= PADDLE_SPEED;
+            break;
+          case 's':
+            paddle1Y += PADDLE_SPEED;
+            break;
+        }
+      });
+    }
+
+    // Move the ball
+    function moveBall() {
+      ballX += ballSpeedX;
+      ballY += ballSpeedY;
+    }
+
+    // Render the game on the screen
+    function render() {
+      // Update paddle positions
+      paddle1.style.top = paddle1Y + 'px';
+      paddle2.style.top = paddle2Y + 'px';
+
+      // Update ball position
+      ball.style.left = ballX + 'px';
+      ball.style.top = ballY + 'px';
+    }
+
+    // Check for collision with paddles
+    function checkPaddleCollision() {
+      if (
+        ballX <= PADDLE_WIDTH &&
+        ballY + BALL_SIZE >= paddle1Y &&
+        ballY <= paddle1Y + PADDLE_HEIGHT
+      ) {
+        ballSpeedX *= -1;
+      }
+
+      if (
+        ballX + BALL_SIZE >= BOARD_WIDTH - PADDLE_WIDTH &&
+        ballY + BALL_SIZE >= paddle2Y &&
+        ballY <= paddle2Y + PADDLE_HEIGHT
+      ) {
+        ballSpeedX *= -1;
+      }
+    }
+
+    // Check for collision with walls
+    function checkWallCollision() {
+      if (ballY <= 0 || ballY + BALL_SIZE >= BOARD_HEIGHT) {
+        ballSpeedY *= -1;
+      }
+    }
+
+    // Check for goal scored
+    function checkGoal() {
+      if (ballX <= 0 || ballX + BALL_SIZE >= BOARD_WIDTH) {
+        resetGame();
+      }
+    }
+
+    // Reset the game
+    function resetGame() {
+      paddle1Y = BOARD_HEIGHT / 2 - PADDLE_HEIGHT / 2;
+      paddle2Y = BOARD_HEIGHT / 2 - PADDLE_HEIGHT / 2;
+      ballX = BOARD_WIDTH / 2 - BALL_SIZE / 2;
+      ballY = BOARD_HEIGHT / 2 - BALL_SIZE / 2;
+      ballSpeedX *= -1;
+      ballSpeedY *= -1;
+    }
+
+    // Start the game loop
+    setInterval(update, 1000 / 60);
+  </script>
+</body>
+</html>

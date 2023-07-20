@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Space Invaders</title>
+  <style>
+    #game-board {
+      width: 600px;
+      height: 400px;
+      background-color: #000;
+      position: relative;
+    }
+
+    .player {
+      width: 30px;
+      height: 20px;
+      background-color: #fff;
+      position: absolute;
+      bottom: 0;
+    }
+
+    .invader {
+      width: 20px;
+      height: 20px;
+      background-color: #0f0;
+      position: absolute;
+    }
+
+    .bullet {
+      width: 2px;
+      height: 10px;
+      background-color: #f00;
+      position: absolute;
+    }
+  </style>
+</head>
+<body>
+  <h1>Space Invaders</h1>
+  <div id="game-board"></div>
+  <script>
+    // Game constants
+    const BOARD_WIDTH = 600;
+    const BOARD_HEIGHT = 400;
+    const PLAYER_WIDTH = 30;
+    const PLAYER_HEIGHT = 20;
+    const INVADER_WIDTH = 20;
+    const INVADER_HEIGHT = 20;
+    const BULLET_WIDTH = 2;
+    const BULLET_HEIGHT = 10;
+    const PLAYER_SPEED = 5;
+    const INVADER_SPEED = 2;
+    const BULLET_SPEED = 5;
+    const INVADER_COLUMNS = 10;
+    const INVADER_ROWS = 4;
+    const INVADER_GAP = 10;
+    const INVADER_START_Y = 50;
+
+    // Game variables
+    let playerX = BOARD_WIDTH / 2 - PLAYER_WIDTH / 2;
+    let invaderY = INVADER_START_Y;
+    let invaderDirection = 1;
+    let bullets = [];
+    let invaderInterval;
+
+    // Game board element
+    const gameBoard = document.getElementById('game-board');
+
+    // Create the player
+    const player = document.createElement('div');
+    player.style.left = playerX + 'px';
+    player.classList.add('player');
+    gameBoard.appendChild(player);
+
+    // Create the invaders
+    const invaders = [];
+
+    for (let row = 0; row < INVADER_ROWS; row++) {
+      for (let column = 0; column < INVADER_COLUMNS; column++) {
+        const invader = document.createElement('div');
+        const invaderX = column * (INVADER_WIDTH + INVADER_GAP);
+        invader.style.left = invaderX + 'px';
+        invader.style.top = invaderY + row * (INVADER_HEIGHT + INVADER_GAP) + 'px';
+        invader.classList.add('invader');
+        gameBoard.appendChild(invader);
+        invaders.push(invader);
+      }
+    }
+
+    // Update the game state
+    function update() {
+      // Move the player
+      movePlayer();
+
+      // Move the invaders
+      moveInvaders();
+
+      // Move the bullets
+      moveBullets();
+
+      // Render the game
+      render();
+
+      // Check for collision
+      checkCollision();
+
+      // Check for game over
+      checkGameOver();
+    }
+
+    // Move the player based on user input
+    function movePlayer() {
+      document.addEventListener('keydown', function(event) {
+        switch (event.key) {
+          case 'ArrowLeft':
+            playerX -= PLAYER_SPEED;
+            break;
+          case 'ArrowRight':
+            playerX += PLAYER_SPEED;
+            break;
+          case ' ':
+            fireBullet();
+            break;
+        }
+      });
+
+      // Restrict the player within the game board
+      if (playerX < 0) {
+        playerX = 0;
+      } else if (playerX + PLAYER_WIDTH > BOARD_WIDTH) {
+        playerX = BOARD_WIDTH - PLAYER_WIDTH;
+      }
+    }
+
+    // Move the invaders
+    function moveInvaders() {
+      invaders.forEach(function(invader) {
+        invader.style.left = parseInt(invader.style.left) + invaderDirection * INVADER_SPEED + 'px';
+      });
+
+      // Reverse direction and move down when reaching the edges
+      const rightmostInvader = Math.max(...invaders.map(invader => parseInt(invader.style.left)));
+      const leftmostInvader = Math.min(...invaders.map(invader => parseInt(invader.style.left)));
+
+      if (rightmostInvader >= BOARD_WIDTH - INVADER_WIDTH || leftmostInvader <= 0) {
+        invaderDirection *= -1;
+        invaderY += 10;
+      }
+    }
+
+    // Move the bullets
+    function moveBullets() {
+      bullets.forEach(function(bullet) {
+        bullet.y -= BULLET_SPEED;
+      });
+
+      // Remove bullets that go off-screen
+      bullets = bullets.filter(function(bullet) {
+        return bullet.y >= 0;
+      });
+    }
+
+    // Fire a bullet from the player
+    function fireBullet() {
+      const bulletX = playerX + PLAYER_WIDTH / 2 - BULLET_WIDTH / 2;
+      const bulletY = BOARD_HEIGHT - PLAYER_HEIGHT - BULLET_HEIGHT;
+      bullets.push({ x: bulletX, y: bulletY });
+    }
+
+    // Render the game on the screen
+    function render() {
+      // Update player position
+      player.style.left = playerX + 'px';
+
+      // Update invader positions
+      invaders.forEach(function(invader) {
+        invader.style.top = invaderY + 'px';
+      });
+
+      // Render bullets
+      const bulletContainer = document.createElement('div');
+      bulletContainer.classList.add('bullet-container');
+
+      bullets.forEach(function(bullet) {
+        const bulletElement = document.createElement('div');
+        bulletElement.style.left = bullet.x + 'px';
+        bulletElement.style.top = bullet.y + 'px';
+        bulletElement.classList.add('bullet');
+        bulletContainer.appendChild(bulletElement);
+      });
+
+      // Remove previous bullets
+      const existingBulletContainer = gameBoard.querySelector('.bullet-container');
+      if (existingBulletContainer) {
+        existingBulletContainer.remove();
+      }
+
+      // Add new bullet container to the game board
+      gameBoard.appendChild(bulletContainer);
+    }
+
+    // Check for collision between bullets and invaders
+    function checkCollision() {
+      bullets.forEach(function(bullet) {
+        invaders.forEach(function(invader) {
+          const bulletRect = {
+            left: bullet.x,
+            top: bullet.y,
+            right: bullet.x + BULLET_WIDTH,
+            bottom: bullet.y + BULLET_HEIGHT
+          };
+
+          const invaderRect = {
+            left: parseInt(invader.style.left),
+            top: parseInt(invader.style.top),
+            right: parseInt(invader.style.left) + INVADER_WIDTH,
+            bottom: parseInt(invader.style.top) + INVADER_HEIGHT
+          };
+
+          if (isRectOverlap(bulletRect, invaderRect)) {
+            bullet.hit = true;
+            invader.remove();
+          }
+        });
+      });
+
+      // Remove bullets that hit invaders
+      bullets = bullets.filter(function(bullet) {
+        return !bullet.hit;
+      });
+    }
+
+    // Check for game over
+    function checkGameOver() {
+      if (invaders.length === 0) {
+        clearInterval(invaderInterval);
+        alert('You win!');
+      } else if (invaders.some(invader => parseInt(invader.style.top) + INVADER_HEIGHT >= BOARD_HEIGHT - PLAYER_HEIGHT)) {
+        clearInterval(invaderInterval);
+        alert('Game over!');
+      }
+    }
+
+    // Check if two rectangles overlap
+    function isRectOverlap(rect1, rect2) {
+      return (
+        rect1.left < rect2.right &&
+        rect1.right > rect2.left &&
+        rect1.top < rect2.bottom &&
+        rect1.bottom > rect2.top
+      );
+    }
+
+    // Start the game loop
+    invaderInterval = setInterval(update, 1000 / 60);
+  </script>
+</body>
+</html>

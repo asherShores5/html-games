@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Breakout</title>
+  <style>
+    #game-board {
+      width: 480px;
+      height: 320px;
+      background-color: #000;
+      position: relative;
+    }
+
+    .paddle {
+      width: 60px;
+      height: 10px;
+      background-color: #fff;
+      position: absolute;
+      bottom: 10px;
+    }
+
+    .ball {
+      width: 10px;
+      height: 10px;
+      background-color: #f00;
+      position: absolute;
+    }
+
+    .brick {
+      width: 40px;
+      height: 10px;
+      background-color: #0f0;
+      position: absolute;
+    }
+  </style>
+</head>
+<body>
+  <h1>Breakout</h1>
+  <div id="game-board"></div>
+  <script>
+    // Game constants
+    const BOARD_WIDTH = 480;
+    const BOARD_HEIGHT = 320;
+    const PADDLE_WIDTH = 60;
+    const PADDLE_HEIGHT = 10;
+    const BALL_RADIUS = 5;
+    const PADDLE_SPEED = 5;
+    const BALL_SPEED = 3;
+    const BRICK_WIDTH = 40;
+    const BRICK_HEIGHT = 10;
+    const BRICK_ROWS = 5;
+    const BRICK_COLUMNS = 12;
+    const BRICK_GAP = 2;
+
+    // Game variables
+    let paddleX = BOARD_WIDTH / 2 - PADDLE_WIDTH / 2;
+    let ballX = BOARD_WIDTH / 2;
+    let ballY = BOARD_HEIGHT / 2;
+    let ballSpeedX = BALL_SPEED;
+    let ballSpeedY = -BALL_SPEED;
+    let bricks = [];
+    let score = 0;
+    let lives = 3;
+    let gameLoop;
+
+    // Game board element
+    const gameBoard = document.getElementById('game-board');
+
+    // Create the paddle
+    const paddle = document.createElement('div');
+    paddle.style.left = paddleX + 'px';
+    paddle.classList.add('paddle');
+    gameBoard.appendChild(paddle);
+
+    // Create the ball
+    const ball = document.createElement('div');
+    ball.style.left = ballX + 'px';
+    ball.style.top = ballY + 'px';
+    ball.classList.add('ball');
+    gameBoard.appendChild(ball);
+
+    // Create the bricks
+    for (let row = 0; row < BRICK_ROWS; row++) {
+      for (let column = 0; column < BRICK_COLUMNS; column++) {
+        const brick = document.createElement('div');
+        const brickX = column * (BRICK_WIDTH + BRICK_GAP);
+        const brickY = row * (BRICK_HEIGHT + BRICK_GAP);
+        brick.style.left = brickX + 'px';
+        brick.style.top = brickY + 'px';
+        brick.classList.add('brick');
+        gameBoard.appendChild(brick);
+        bricks.push(brick);
+      }
+    }
+
+    // Update the game state
+    function update() {
+      // Move the paddle
+      movePaddle();
+
+      // Move the ball
+      moveBall();
+
+      // Check for collision with paddle
+      checkPaddleCollision();
+
+      // Check for collision with bricks
+      checkBrickCollision();
+
+      // Render the game
+      render();
+
+      // Check for game over
+      checkGameOver();
+    }
+
+    // Move the paddle based on user input
+    function movePaddle() {
+      document.addEventListener('keydown', function(event) {
+        switch (event.key) {
+          case 'ArrowLeft':
+            paddleX -= PADDLE_SPEED;
+            break;
+          case 'ArrowRight':
+            paddleX += PADDLE_SPEED;
+            break;
+        }
+      });
+
+      // Restrict the paddle within the game board
+      if (paddleX < 0) {
+        paddleX = 0;
+      } else if (paddleX + PADDLE_WIDTH > BOARD_WIDTH) {
+        paddleX = BOARD_WIDTH - PADDLE_WIDTH;
+      }
+    }
+
+    // Move the ball
+    function moveBall() {
+      ballX += ballSpeedX;
+      ballY += ballSpeedY;
+    }
+
+    // Check for collision with paddle
+    function checkPaddleCollision() {
+      if (
+        ballY + BALL_RADIUS >= BOARD_HEIGHT - PADDLE_HEIGHT &&
+        ballX + BALL_RADIUS >= paddleX &&
+        ballX - BALL_RADIUS <= paddleX + PADDLE_WIDTH
+      ) {
+        // Reverse the ball's vertical direction
+        ballSpeedY *= -1;
+
+        // Adjust the ball's horizontal direction based on the collision point
+        const paddleCenterX = paddleX + PADDLE_WIDTH / 2;
+        const collisionOffsetX = ballX - paddleCenterX;
+        ballSpeedX = collisionOffsetX * 0.2;
+      }
+    }
+
+    // Check for collision with bricks
+    function checkBrickCollision() {
+      bricks.forEach(function(brick) {
+        if (
+          ballY - BALL_RADIUS <= parseInt(brick.style.top) + BRICK_HEIGHT &&
+          ballY + BALL_RADIUS >= parseInt(brick.style.top) &&
+          ballX + BALL_RADIUS >= parseInt(brick.style.left) &&
+          ballX - BALL_RADIUS <= parseInt(brick.style.left) + BRICK_WIDTH
+        ) {
+          // Reverse the ball's vertical direction
+          ballSpeedY *= -1;
+
+          // Remove the brick from the game board
+          brick.remove();
+          bricks = bricks.filter(b => b !== brick);
+
+          // Increase the score
+          score += 10;
+        }
+      });
+    }
+
+    // Render the game on the screen
+    function render() {
+      // Update paddle position
+      paddle.style.left = paddleX + 'px';
+
+      // Update ball position
+      ball.style.left = ballX + 'px';
+      ball.style.top = ballY + 'px';
+
+      // Update score and lives
+      document.getElementById('score').textContent = 'Score: ' + score;
+      document.getElementById('lives').textContent = 'Lives: ' + lives;
+    }
+
+    // Check for game over
+    function checkGameOver() {
+      if (ballY >= BOARD_HEIGHT) {
+        lives--;
+        resetBall();
+
+        if (lives === 0) {
+          clearInterval(gameLoop);
+          alert('Game over!');
+        }
+      }
+    }
+
+    // Reset the ball position and speed
+    function resetBall() {
+      ballX = BOARD_WIDTH / 2;
+      ballY = BOARD_HEIGHT / 2;
+      ballSpeedX = BALL_SPEED;
+      ballSpeedY = -BALL_SPEED;
+    }
+
+    // Start the game
+    function startGame() {
+      // Reset the score and lives
+      score = 0;
+      lives = 3;
+
+      // Reset the ball
+      resetBall();
+
+      // Set up keyboard event listener
+      document.addEventListener('keydown', function(event) {
+        if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+          event.preventDefault();
+        }
+      });
+
+      // Start the game loop
+      gameLoop = setInterval(update, 1000 / 60);
+    }
+
+    // Start the game when the page loads
+    window.onload = startGame;
+  </script>
+  <p id="score"></p>
+  <p id="lives"></p>
+</body>
+</html>

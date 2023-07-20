@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Snake Game</title>
+  <style>
+    #game-board {
+      width: 400px;
+      height: 400px;
+      border: 1px solid #000;
+      position: relative;
+    }
+
+    .snake {
+      width: 20px;
+      height: 20px;
+      background-color: #000;
+      position: absolute;
+    }
+
+    .food {
+      width: 20px;
+      height: 20px;
+      background-color: #f00;
+      position: absolute;
+    }
+  </style>
+</head>
+<body>
+  <h1>Snake Game</h1>
+  <div id="game-board"></div>
+  <script>
+    // Game constants
+    const GRID_SIZE = 20;
+    const BOARD_SIZE = 400;
+    const SNAKE_SPEED = 150;
+
+    // Game variables
+    let snake = [{ x: 0, y: 0 }];
+    let food = { x: 0, y: 0 };
+    let dx = GRID_SIZE;
+    let dy = 0;
+    let gameLoop;
+
+    // Generate a random position for the food
+    function generateFoodPosition() {
+      const maxX = BOARD_SIZE / GRID_SIZE;
+      const maxY = BOARD_SIZE / GRID_SIZE;
+      food.x = Math.floor(Math.random() * maxX) * GRID_SIZE;
+      food.y = Math.floor(Math.random() * maxY) * GRID_SIZE;
+    }
+
+    // Update the game state
+    function update() {
+      // Move the snake
+      const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+      snake.unshift(head);
+
+      // Check if the snake has collided with the food
+      if (head.x === food.x && head.y === food.y) {
+        // Generate a new food position
+        generateFoodPosition();
+      } else {
+        // Remove the tail segment
+        snake.pop();
+      }
+
+      // Check if the snake has collided with the walls or itself
+      if (
+        head.x < 0 ||
+        head.x >= BOARD_SIZE ||
+        head.y < 0 ||
+        head.y >= BOARD_SIZE ||
+        isSnakeCollision(head)
+      ) {
+        // Game over
+        clearInterval(gameLoop);
+        alert('Game Over');
+        return;
+      }
+
+      // Render the game
+      render();
+    }
+
+    // Check if the snake has collided with itself
+    function isSnakeCollision(head) {
+      return snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y);
+    }
+
+    // Render the game on the screen
+    function render() {
+      const gameBoard = document.getElementById('game-board');
+
+      // Clear the game board
+      while (gameBoard.firstChild) {
+        gameBoard.firstChild.remove();
+      }
+
+      // Render the snake
+      snake.forEach(segment => {
+        const snakeElement = document.createElement('div');
+        snakeElement.style.left = segment.x + 'px';
+        snakeElement.style.top = segment.y + 'px';
+        snakeElement.classList.add('snake');
+        gameBoard.appendChild(snakeElement);
+      });
+
+      // Render the food
+      const foodElement = document.createElement('div');
+      foodElement.style.left = food.x + 'px';
+      foodElement.style.top = food.y + 'px';
+      foodElement.classList.add('food');
+      gameBoard.appendChild(foodElement);
+    }
+
+    // Handle keyboard input
+    function handleKeyDown(event) {
+      switch (event.key) {
+        case 'ArrowUp':
+          dx = 0;
+          dy = -GRID_SIZE;
+          break;
+        case 'ArrowDown':
+          dx = 0;
+          dy = GRID_SIZE;
+          break;
+        case 'ArrowLeft':
+          dx = -GRID_SIZE;
+          dy = 0;
+          break;
+        case 'ArrowRight':
+          dx = GRID_SIZE;
+          dy = 0;
+          break;
+      }
+    }
+
+    // Start the game
+    function startGame() {
+      // Generate the initial snake position
+      snake = [{ x: 0, y: 0 }];
+
+      // Generate the initial food position
+      generateFoodPosition();
+
+      // Set up keyboard event listener
+      document.addEventListener('keydown', handleKeyDown);
+
+      // Start the game loop
+      gameLoop = setInterval(update, SNAKE_SPEED);
+    }
+
+    // Start the game when the page loads
+    window.onload = startGame;
+  </script>
+</body>
+</html>

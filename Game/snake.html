@@ -17,6 +17,10 @@
       position: absolute;
     }
 
+    /* Add a class for the snake's head */
+    .snake-head { 
+      background-color: #0c3812; /* Optional: Different color for the head */
+    }
     .food {
       width: 20px;
       height: 20px;
@@ -39,6 +43,7 @@
     let food = { x: 0, y: 0 };
     let dx = GRID_SIZE;
     let dy = 0;
+    let queuedInputs = []; // Store queued inputs
     let gameLoop;
 
     // Generate a random position for the food
@@ -51,6 +56,9 @@
 
     // Update the game state
     function update() {
+      // Handle queued inputs
+      handleQueuedInputs();
+
       // Move the snake
       const head = { x: snake[0].x + dx, y: snake[0].y + dy };
       snake.unshift(head);
@@ -75,6 +83,7 @@
         // Game over
         clearInterval(gameLoop);
         alert('Game Over');
+        resetGame();
         return;
       }
 
@@ -97,11 +106,14 @@
       }
 
       // Render the snake
-      snake.forEach(segment => {
+      snake.forEach((segment, index) => {
         const snakeElement = document.createElement('div');
         snakeElement.style.left = segment.x + 'px';
         snakeElement.style.top = segment.y + 'px';
         snakeElement.classList.add('snake');
+        if (index === 0) {
+          snakeElement.classList.add('snake-head');
+        }
         gameBoard.appendChild(snakeElement);
       });
 
@@ -117,22 +129,66 @@
     function handleKeyDown(event) {
       switch (event.key) {
         case 'ArrowUp':
-          dx = 0;
-          dy = -GRID_SIZE;
+          if (dy !== GRID_SIZE) {
+            enqueueInput('ArrowUp');
+          }
           break;
         case 'ArrowDown':
-          dx = 0;
-          dy = GRID_SIZE;
+          if (dy !== -GRID_SIZE) {
+            enqueueInput('ArrowDown');
+          }
           break;
         case 'ArrowLeft':
-          dx = -GRID_SIZE;
-          dy = 0;
+          if (dx !== GRID_SIZE) {
+            enqueueInput('ArrowLeft');
+          }
           break;
         case 'ArrowRight':
-          dx = GRID_SIZE;
-          dy = 0;
+          if (dx !== -GRID_SIZE) {
+            enqueueInput('ArrowRight');
+          }
           break;
       }
+    }
+
+    // Enqueue input to the queuedInputs array
+    function enqueueInput(input) {
+      queuedInputs.push(input);
+    }
+
+    // Handle queued inputs
+    function handleQueuedInputs() {
+      if (queuedInputs.length > 0) {
+        const nextInput = queuedInputs.shift();
+        switch (nextInput) {
+          case 'ArrowUp':
+            dx = 0;
+            dy = -GRID_SIZE;
+            break;
+          case 'ArrowDown':
+            dx = 0;
+            dy = GRID_SIZE;
+            break;
+          case 'ArrowLeft':
+            dx = -GRID_SIZE;
+            dy = 0;
+            break;
+          case 'ArrowRight':
+            dx = GRID_SIZE;
+            dy = 0;
+            break;
+        }
+      }
+    }
+
+    // Reset the game state
+    function resetGame() {
+      snake = [{ x: 0, y: 0 }];
+      dx = GRID_SIZE;
+      dy = 0;
+      queuedInputs = [];
+      generateFoodPosition();
+      gameLoop = setInterval(update, SNAKE_SPEED);
     }
 
     // Start the game
